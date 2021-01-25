@@ -18,10 +18,14 @@ class TicTacToe
     [2,4,6]  #Top Right - Bottom Left Diagonal
   ]
 
-  def initialize
-    @board = Array.new(9," ")
+  def initialize()
+    @board = [
+      " ", " ", " ",
+      " ", " ", " ",
+      " ", " ", " "
+    ]
   end
-
+  
   def display_board
     puts " #{@board[0]} | #{@board[1]} | #{@board[2]} "
     puts "-----------"
@@ -30,107 +34,127 @@ class TicTacToe
     puts " #{@board[6]} | #{@board[7]} | #{@board[8]} "
   end
 
-  def input_to_index(user_input)
-    input = user_input.to_i
-    input -= 1
+  def input_to_index(input)
+    input = input.to_i - 1
+    input
   end
 
-  def move(input, token = "X")
-    @board[input] = token
+  def move(index, token)
+    @board[index] = token
   end
 
   def position_taken?(index)
-    decision = false
-    decision = true if @board[index] == "X" || @board[index] == "O"
-    decision
+    taken = false
+    taken = true if @board[index] != " "
+    taken
   end
-  
-  def valid_move?(position)
-    decision = false
 
-    on_board = false
-    on_board = true if position >= 0 && position <= 8
-
-    unoccupied = false
-    unoccupied = true if position_taken?(position) == false
-    
-    decision = true if unoccupied && on_board
-    decision
+  def valid_move?(index)
+    valid = true
+    if index >= 0 && index <= 8
+      valid = false if self.position_taken?(index)
+    else
+      valid = false
+    end
+    valid
   end
 
   def turn_count
-    @board.count {|token| token == "X" || token == "O"}
+    count = 0
+    @board.each do |value|
+      count +=1 if value != " "
+    end
+    count
   end
 
   def current_player
-    turn_count % 2 == 0 ? "X" : "O"
+    player = "O"
+    player = "X" if self.turn_count.even?
+    player
   end
 
   def turn
-    loop do
-      input = gets.chomp
+    input = gets.chomp
+    index = self.input_to_index(input)
 
-      index = input_to_index(input)
-      token = current_player
-      if valid_move?(index)
-        move(index, token)
-        display_board
-        break
-      end
+    until self.valid_move?(index) do
+      input = gets.chomp
+      index = self.input_to_index(input)
     end
+
+    @board[index] = self.current_player
+    self.display_board
   end
 
   def won?
-    decision = false
+    won = false
 
-    winning_combo = []
-
-    WIN_COMBINATIONS.each do |combo|
-      win_index1 = combo[0]
-      win_index2 = combo[1]
-      win_index3 = combo[2]
-
-      one_two_same = @board[win_index1] == @board[win_index2]
-      two_three_same = @board[win_index2] == @board[win_index3]
-      one_three_same = @board[win_index1] == @board[win_index3]
-
-      if one_two_same && two_three_same && one_three_same
-        winning_combo = combo
-      end
+    x_locations = []
+    o_locations = []
+    @board.each_with_index do |value,index|
+      x_locations << index if value == "X"
+      o_locations << index if value == "O"
     end
 
-    winning_combo = false if winning_combo == []
+    WIN_COMBINATIONS.each do |win_combo|
+      won = win_combo if x_locations.combination(3).include?(win_combo)
+      won = win_combo if o_locations.combination(3).include?(win_combo)
+    end
 
-    winning_combo
+    won
   end
 
   def full?
-    full = true
-    full = false if @board.include?(" ")
+    full = false
+    full = true if @board.count{|value| value == " "} == 0
     full
   end
 
   def draw?
-    draw = true
-    draw = false if (won? && full?) || (full? != true)
+    if self.full? && self.won? == false
+      draw = true
+    else
+      draw = false
+    end
     draw
   end
 
   def over?
-    over = false
-    over = true if draw? || won?
+    if self.draw? || self.won?
+      over = true
+    else
+      over = false
+    end
     over
   end
 
   def winner
+    the_winner = nil
 
-    if won?.length > 0 && draw? == false
-      winning_combo = won?
-      the_winner = @board[winning_combo[0]]
+    x_locations = []
+    o_locations = []
+    @board.each_with_index do |value,index|
+      x_locations << index if value == "X"
+      o_locations << index if value == "O"
     end
 
-    the_winner = nil if the_winner == " "
+    WIN_COMBINATIONS.each do |win_combo|
+      the_winner = "X" if x_locations.combination(3).include?(win_combo)
+      the_winner = "O" if o_locations.combination(3).include?(win_combo)
+    end
+
     the_winner
   end
 
+  def play
+    until self.over? do
+      self.turn
+    end
+
+    if self.won?
+      puts "Congratulations #{self.winner}!"
+    else
+      puts "Cat's Game!"
+    end
+  end
 end
